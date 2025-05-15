@@ -3,10 +3,17 @@ import 'package:provider/provider.dart';
 import 'package:typing_game/features/typing_game/controllers/typing_controller.dart';
 
 class TypingPage extends StatefulWidget {
-  const TypingPage({super.key, required this.title});
+  const TypingPage({
+    super.key,
+    required this.title,
+    required this.level,
+    required this.mode,
+  });
 
   final String title;
-
+  final String level;
+  final String mode; // modeパラメータを追加
+  // levelパラメータを追加
   @override
   State<TypingPage> createState() => _TypingPageState();
 }
