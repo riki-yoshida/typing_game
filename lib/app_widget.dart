@@ -18,6 +18,7 @@ class AppWidget extends StatelessWidget {
             seedColor: Colors.teal,
           ), // テーマカラーを変更
           useMaterial3: true,
+          fontFamily: 'NotoSansJP',
         ),
         home: const StartPage(), // MaterialAppのhomeをStartPageに変更
       ),

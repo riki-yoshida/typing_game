@@ -20,3 +20,23 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/word_lists/
+    - assets/fonts/
+
+  fonts:
+      - family: NotoSansJP
+        fonts:
+          - asset: assets/fonts/NotoSansJP-Black.otf
+            weight: 900
+          - asset: assets/fonts/NotoSansJP-Bold.otf
+            weight: 700
+          - asset: assets/fonts/NotoSansJP-Light.otf
+            weight: 300
+          - asset: assets/fonts/NotoSansJP-Medium.otf
+            weight: 500
+          - asset: assets/fonts/NotoSansJP-Regular.otf
+            weight: 400
+          - asset: assets/fonts/NotoSansJP-Thin.otf
+            weight: 100

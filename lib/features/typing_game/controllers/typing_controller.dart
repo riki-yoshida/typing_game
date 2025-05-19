@@ -1,39 +1,133 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:typing_game/features/typing_game/models/typing_game_model.dart';
+import 'package:flutter/services.dart' show rootBundle; // JSONファイル読み込みに必要
+import 'dart:convert'; // JSONデコードに必要
 
 class TypingController with ChangeNotifier {
-  final TypingGameModel _model = TypingGameModel();
-  late TextEditingController textEditingController;
+  String _problemText = "読み込み中..."; // 初期値を日本語に変更
+  String get problemText => _problemText;
+
+  final TextEditingController textEditingController = TextEditingController();
+  bool _isGameClear = false;
+  bool get isGameClear => _isGameClear;
+
+  String? _currentLevel;
+  String? _currentMode;
+
+  // 読み込んだ単語リストをキャッシュするためのMap
+  final Map<String, List<Map<String, String>>> _loadedWordListsCache = {};
+
+  // レベル名とJSONファイル名のマッピング
+  final Map<String, String> _levelToFileMap = {
+    '小学生': 'shougakusei.json',
+    '中学生': 'chuugakusei.json',
+    '高校生': 'koukousei.json',
+    '大学生': 'daigakusei.json',
+    '社会人': 'shakaijin.json',
+  };
+
+  List<Map<String, String>> _currentWordList = [];
+  final Random _random = Random();
 
   TypingController() {
-    textEditingController = TextEditingController();
+    // テキスト入力の変更を監視するリスナー
+    textEditingController.addListener(_onInput);
   }
 
-  String get problemText => _model.currentProblemText;
-  String get typedText => _model.typedText;
-  bool get isGameClear => _model.isGameClear;
+  // initializeGameを非同期に変更
+  Future<void> initializeGame({
+    required String level,
+    required String mode,
+  }) async {
+    _currentLevel = level;
+    _currentMode = mode;
+    _isGameClear = false;
+    _problemText = "読み込み中..."; // ロード中に表示するテキスト
+    textEditingController.clear(); // 前回の入力をクリア
+    notifyListeners(); // UIを更新して「読み込み中...」を表示
 
-  void onInputChanged(String value) {
-    if (isGameClear) return;
+    // キャッシュを確認
+    if (_loadedWordListsCache.containsKey(level)) {
+      _currentWordList = _loadedWordListsCache[level]!;
+    } else {
+      // ファイルから読み込み
+      final fileName = _levelToFileMap[level];
+      if (fileName == null) {
+        _problemText = "レベルに対応するファイルが見つかりません。";
+        _currentWordList = [];
+        notifyListeners();
+        return;
+      }
 
-    _model.setTypedText(value);
-
-    if (_model.typedText == _model.currentProblemText) {
-      _model.nextProblem();
-      textEditingController.clear();
+      try {
+        final String jsonString = await rootBundle.loadString(
+          'assets/word_lists/$fileName',
+        );
+        final List<dynamic> jsonList = jsonDecode(jsonString);
+        // JSONの各要素を Map<String, String> に変換
+        _currentWordList =
+            jsonList.map((item) => Map<String, String>.from(item)).toList();
+        _loadedWordListsCache[level] = _currentWordList; // 読み込んだリストをキャッシュに保存
+      } catch (e) {
+        // ignore: avoid_print
+        print("単語リストの読み込みエラー ($level): $e");
+        _problemText = "単語リストの読み込みに失敗しました。";
+        _currentWordList = [];
+        notifyListeners();
+        return;
+      }
     }
-    notifyListeners();
+
+    // 最初の問題を設定
+    _setNewProblem();
+    notifyListeners(); // UIに変更を通知
   }
 
-  void resetGame() {
-    // 必要であればゲームをリセットするロジックをここに追加
-    // _model = TypingGameModel(); // 例えば新しいモデルインスタンスを作成
-    // textEditingController.clear();
-    // notifyListeners();
+  void _setNewProblem() {
+    if (_currentWordList.isNotEmpty) {
+      final wordPair =
+          _currentWordList[_random.nextInt(_currentWordList.length)];
+      _problemText = wordPair['en']!; // 英語の単語を問題文として設定
+    } else {
+      // initializeGameでエラーメッセージが設定されているはずなので、
+      // ここでは problemText が "読み込み中..." の場合のみ更新する
+      if (_problemText == "読み込み中...") {
+        _problemText = "このレベルの単語がありません！";
+      }
+    }
+    // より複雑なゲームでは、最近使用した単語を避ける処理などを追加できます。
+  }
+
+  // TextFieldのonChangedから呼び出されるメソッド
+  void onInputChanged(String value) {
+    // 入力されたテキストと問題文（小文字に変換して比較）が一致した場合
+    if (value.toLowerCase() == _problemText.toLowerCase()) {
+      if (_currentMode == '練習モード') {
+        _setNewProblem(); // 新しい問題を設定
+        textEditingController.clear(); // 入力フィールドをクリア
+      } else if (_currentMode == '本番モード') {
+        // 「本番モード」では、1つの単語を正解したらゲームクリアとします。
+        // （スコア、タイマー、連続問題など、より複雑なロジックに拡張可能です）
+        _isGameClear = true;
+        // オプション：テキストフィールドをクリアしたり、メッセージを表示したりできます。
+        // textEditingController.clear(); // または、TextFieldのenabledプロパティで無効化
+      }
+    }
+    notifyListeners(); // UIに変更を通知
+  }
+
+  // textEditingControllerのリスナーメソッド
+  void _onInput() {
+    // このメソッドはTextEditingControllerのテキストが変更されるたびに呼び出されます。
+    // 特定のシナリオでonChangedコールバックよりもリスナーを優先する場合にロジックをここに配置できます。
+    // 現在のセットアップでは、TextFieldの`onChanged`から呼び出される`onInputChanged`がより直接的です。
+    // `onInputChanged`が既にロジックを処理している場合、このリスナーは必要に応じて他のリアクティブな更新に使用できます。
+    // 重複処理を避けるため、主要なロジックは`onInputChanged`にあることを確認してください。
   }
 
   @override
   void dispose() {
+    textEditingController.removeListener(_onInput);
     textEditingController.dispose();
     super.dispose();
   }

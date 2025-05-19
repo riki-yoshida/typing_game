@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:typing_game/features/typing_game/presentation/pages/typing_page.dart';
+import 'package:typing_game/features/typing_game/controllers/typing_controller.dart'; // コントローラーをインポート
 
 class StartPage extends StatefulWidget {
   const StartPage({super.key});
@@ -195,12 +197,17 @@ class _StartPageState extends State<StartPage> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) => TypingPage(
-                              title:
-                                  '$_selectedLevel $_selectedMode', // タイトルにレベルとモードを表示
-                              // levelとmodeパラメータを渡す
-                              mode: _selectedMode!,
-                              level: _selectedLevel!,
+                            (context) => ChangeNotifierProvider(
+                              create:
+                                  (_) =>
+                                      TypingController(), // ゲームごとに新しいインスタンスを作成
+                              child: TypingPage(
+                                title:
+                                    '$_selectedLevel $_selectedMode', // タイトルにレベルとモードを表示
+                                // levelとmodeパラメータを渡す
+                                mode: _selectedMode!,
+                                level: _selectedLevel!,
+                              ),
                             ),
                       ),
                     );

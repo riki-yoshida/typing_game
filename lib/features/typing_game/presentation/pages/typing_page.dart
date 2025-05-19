@@ -24,8 +24,15 @@ class _TypingPageState extends State<TypingPage> {
   @override
   void initState() {
     super.initState();
-    // 初期化処理が必要な場合はControllerで行うか、ここでControllerのメソッドを呼ぶ
-    // 例: Provider.of<TypingController>(context, listen: false).initialize();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // async を追加
+      // initializeGame が Future を返すようになったため await で待つ
+      await Provider.of<TypingController>(
+        context,
+        listen: false,
+      ).initializeGame(level: widget.level, mode: widget.mode);
+      // 必要であれば、ロード完了後に何かUI更新以外の処理を行う
+    });
   }
 
   @override
