@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:typing_game/features/typing_game/presentation/pages/typing_page.dart';
 import 'package:typing_game/features/typing_game/controllers/typing_controller.dart'; // コントローラーをインポート
+import 'package:typing_game/features/word_list/presentation/pages/word_list_page.dart'; // WordListPageをインポート
+import 'package:flutter/services.dart' show rootBundle; // JSONファイル読み込みに必要
+import 'dart:convert'; // JSONデコードに必要
 
 class StartPage extends StatefulWidget {
   const StartPage({super.key});
@@ -11,55 +14,84 @@ class StartPage extends StatefulWidget {
 }
 
 class _StartPageState extends State<StartPage> {
-  final List<String> _levels = ['小学生', '中学生', '高校生', '大学生', '社会人'];
-  final List<String> _modes = ['練習モード', '本番モード'];
-  String? _selectedLevel;
-  String? _selectedMode;
+  // レベルの選択肢 (IDと表示名)
+  final List<Map<String, String>> _levelOptions = [
+    {'id': 'shougakusei', 'name': '小学生'},
+    {'id': 'chuugakusei', 'name': '中学生'},
+    {'id': 'koukousei', 'name': '高校生'},
+    {'id': 'daigakusei', 'name': '大学生'},
+    {'id': 'shakaijin', 'name': '社会人'},
+  ];
+
+  // モードの選択肢 (IDと表示名)
+  final List<Map<String, String>> _modeOptions = [
+    {'id': 'practice', 'name': '練習モード'},
+    {'id': 'real', 'name': '本番モード'},
+  ];
+
+  String? _selectedLevelId;
+  String? _selectedModeId;
 
   @override
   void initState() {
     super.initState();
     // 初期選択レベルを設定
-    _selectedLevel = _levels[0];
-    _selectedMode = _modes[0]; // 初期選択モードを設定
+    if (_levelOptions.isNotEmpty) {
+      _selectedLevelId = _levelOptions[0]['id'];
+    }
+    if (_modeOptions.isNotEmpty) {
+      _selectedModeId = _modeOptions[0]['id'];
+    }
+  }
+
+  // 選択されたレベルの単語リストを非同期で読み込む関数
+  Future<List<Map<String, String>>> _loadWordListForLevel(
+    String levelId,
+  ) async {
+    // TypingControllerのlevelToFileMapと同様のマッピングを使用
+    final Map<String, String> levelToFileMap = {
+      'shougakusei': 'shougakusei.json',
+      'chuugakusei': 'chuugakusei.json',
+      'koukousei': 'koukousei.json',
+      'daigakusei': 'daigakusei.json',
+      'shakaijin': 'shakaijin.json',
+    };
+
+    final fileName = levelToFileMap[levelId];
+    if (fileName == null) {
+      print("Error: No file mapping found for level ID $levelId");
+      return []; // ファイル名が見つからない場合は空のリストを返す
+    }
+
+    try {
+      final String jsonString = await rootBundle.loadString(
+        'assets/word_lists/$fileName',
+      );
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      return jsonList.map((item) => Map<String, String>.from(item)).toList();
+    } catch (e) {
+      print("Error loading word list for $levelId: $e");
+      return []; // エラー時も空のリストを返す
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // drawer: Drawer(...) // Drawerプロパティは削除
       body: Row(
-        // bodyをRowに変更してサイドバーとメインコンテンツを並べる
         children: [
           // サイドバー部分
           Container(
-            // サイドバーの幅を固定するためのコンテナ
             width: 250, // サイドバーの幅
             color:
-                Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest, // サイドバーの背景色 (deprecated_member_use)
+                Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest, // サイドバーの背景色
             child: ListView(
-              // このListViewの中に全てのサイドバー項目を入れる
-              // Drawerの中身をListViewとして再利用
               padding: EdgeInsets.zero,
               children: [
-                // DrawerHeaderの代わり
-                Container(
-                  height: 100, // ヘッダーの高さ
-                  color: Theme.of(context).colorScheme.primary,
-                  alignment: Alignment.centerLeft, // テキストの配置
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                  ), // パディング
-                  child: Text(
-                    'Menu',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 24,
-                    ),
-                  ),
-                ),
+                // DrawerHeaderの代わり (AppBarの下に配置されるため不要になる)
+                // Container( ... ),
                 ListTile(
                   leading: const Icon(Icons.settings),
                   title: const Text('Settings'),
@@ -89,30 +121,32 @@ class _StartPageState extends State<StartPage> {
                     ),
                   ),
                 ),
-                ..._levels.map((level) {
+                ..._levelOptions.map((option) {
+                  final levelId = option['id']!;
+                  final levelName = option['name']!;
                   return ListTile(
                     leading: Icon(
-                      _selectedLevel == level
+                      _selectedLevelId == levelId
                           ? Icons.check_circle
                           : Icons.radio_button_unchecked,
                       color:
-                          _selectedLevel == level
+                          _selectedLevelId == levelId
                               ? Theme.of(context).colorScheme.primary
                               : null,
                     ),
-                    title: Text(level),
-                    selected: _selectedLevel == level,
+                    title: Text(levelName),
+                    selected: _selectedLevelId == levelId,
                     selectedTileColor: Theme.of(context)
                         .colorScheme
                         .primaryContainer
                         .withAlpha((0.3 * 255).round()), // withOpacityを修正
                     onTap: () {
                       setState(() {
-                        _selectedLevel = level;
+                        _selectedLevelId = levelId;
                       });
                     },
                   );
-                }), // Removed .toList() here
+                }),
                 const Divider(),
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -128,91 +162,150 @@ class _StartPageState extends State<StartPage> {
                     ),
                   ),
                 ),
-                ..._modes.map((mode) {
+                ..._modeOptions.map((option) {
+                  final modeId = option['id']!;
+                  final modeName = option['name']!;
                   return ListTile(
                     leading: Icon(
-                      _selectedMode == mode
+                      _selectedModeId == modeId
                           ? Icons.check_circle
                           : Icons.radio_button_unchecked,
                       color:
-                          _selectedMode == mode
+                          _selectedModeId == modeId
                               ? Theme.of(context).colorScheme.primary
                               : null,
                     ),
-                    title: Text(mode),
-                    selected: _selectedMode == mode,
+                    title: Text(modeName),
+                    selected: _selectedModeId == modeId,
                     selectedTileColor: Theme.of(context)
                         .colorScheme
                         .primaryContainer
                         .withAlpha((0.3 * 255).round()),
                     onTap: () {
                       setState(() {
-                        _selectedMode = mode;
+                        _selectedModeId = modeId;
                       });
                     },
                   );
                 }),
-              ], // ListView children closing bracket
-            ), // ListView closing bracket
+              ],
+            ),
           ), // サイドバーのContainerの閉じカッコ
           Expanded(
             // 残りの領域をメインコンテンツに割り当てる
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text(
-                  'Welcome to Typing Game!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                if (_selectedLevel != null)
-                  Text(
-                    '選択中のレベル: $_selectedLevel',
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 50,
-                      vertical: 20,
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  onPressed: () {
-                    if (_selectedLevel == null) {
-                      // レベルが選択されていない場合
-                      // initStateで初期値が設定されるため、基本的にはここには来ないはずですが念のため
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('レベルを選択してください。')),
-                      );
-                      return;
-                    }
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => ChangeNotifierProvider(
-                              create:
-                                  (_) =>
-                                      TypingController(), // ゲームごとに新しいインスタンスを作成
-                              child: TypingPage(
-                                title:
-                                    '$_selectedLevel $_selectedMode', // タイトルにレベルとモードを表示
-                                // levelとmodeパラメータを渡す
-                                mode: _selectedMode!,
-                                level: _selectedLevel!,
-                              ),
+              children: [
+                // メインコンテンツエリア専用のAppBar
+                AppBar(
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surface, // 背景色を調整
+                  elevation: 1.0, // 影を少し薄く
+                  automaticallyImplyLeading:
+                      false, // ScaffoldのAppBarではないので戻るボタンは表示しない
+                  actions: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.list_alt),
+                        label: const Text('ワード一覧'),
+                        onPressed: () async {
+                          if (_selectedLevelId == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('まずレベルを選択してください。')),
+                            );
+                            return;
+                          }
+                          final selectedLevelName =
+                              _levelOptions.firstWhere(
+                                (opt) => opt['id'] == _selectedLevelId,
+                              )['name']!;
+                          // 選択されたレベルの単語リストを読み込む
+                          final List<Map<String, String>> words =
+                              await _loadWordListForLevel(_selectedLevelId!);
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => WordListPage(
+                                    levelName: selectedLevelName,
+                                    wordList: words,
+                                  ),
                             ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                  child: const Text('Start Game'),
+                    ),
+                  ],
+                ),
+                // メインコンテンツの本体
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const Text(
+                        'Welcome to Typing Game!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (_selectedLevelId != null)
+                        Text(
+                          '選択中のレベル: ${_levelOptions.firstWhere((opt) => opt['id'] == _selectedLevelId, orElse: () => {'name': '未選択'})['name']}',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      const SizedBox(height: 10), // モード表示との間隔調整
+                      if (_selectedModeId != null)
+                        Text(
+                          '選択中のモード: ${_modeOptions.firstWhere((opt) => opt['id'] == _selectedModeId, orElse: () => {'name': '未選択'})['name']}',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 50,
+                            vertical: 20,
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onPressed: () {
+                          if (_selectedLevelId == null ||
+                              _selectedModeId == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('レベルを選択してください。')),
+                            );
+                            return;
+                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ChangeNotifierProvider(
+                                    create: (_) => TypingController(),
+                                    child: TypingPage(
+                                      title:
+                                          '${_levelOptions.firstWhere((opt) => opt['id'] == _selectedLevelId)['name']} ${_modeOptions.firstWhere((opt) => opt['id'] == _selectedModeId)['name']}',
+                                      level: _selectedLevelId!,
+                                      mode: _selectedModeId!,
+                                    ),
+                                  ),
+                            ),
+                          );
+                        },
+                        child: const Text('Start Game'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

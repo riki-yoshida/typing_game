@@ -55,7 +55,7 @@ class _TypingPageState extends State<TypingPage> {
       ),
       backgroundColor: Theme.of(
         context,
-      ).colorScheme.background.withOpacity(0.95), // alphaをopacityに変更
+      ).colorScheme.surface.withValues(alpha: 0.95), // alphaをopacityに変更
       body: Padding(
         // 全体にパディングを追加
         padding: const EdgeInsets.all(24.0),
@@ -70,11 +70,11 @@ class _TypingPageState extends State<TypingPage> {
                   horizontal: 24.0,
                 ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12.0),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1), // alphaをopacityに変更
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -82,6 +82,32 @@ class _TypingPageState extends State<TypingPage> {
                 ),
                 child: Text(
                   controller.problemText, // Controllerから問題文を取得
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 28, // フォントサイズを少し大きく
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 24.0,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  controller.problemTextToJa, // Controllerから問題文を取得
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28, // フォントサイズを少し大きく
