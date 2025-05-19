@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle; // JSONファイル読み込みに必要
-import 'dart:async'; // Timerに必要
 import 'dart:convert'; // JSONデコードに必要
 
 class TypingController with ChangeNotifier {
@@ -17,18 +16,11 @@ class TypingController with ChangeNotifier {
   bool get allWordsCompleted => _allWordsCompleted;
 
   String? _currentLevel;
-  String? _currentMode; // _currentModeはonInputChangedで使用されています
+  String? _currentMode;
   int _targetWordCount = 10; // デフォルトの目標ワード数
   int get targetWordCount => _targetWordCount; // _targetWordCountのゲッターを追加
   int get currentWordIndex => _currentWordIndex; // _currentWordIndexのゲッターを追加
   int _currentWordIndex = 0; // 現在の出題数 (0からスタート)
-
-  DateTime? _gameStartTime; // ゲーム開始時刻 (最初の問題が出題された時)
-  Duration? _finalElapsedTime; // 全問完了/ゲームクリア時の最終経過時間
-  Duration? get finalElapsedTime => _finalElapsedTime; // 最終経過時間のゲッター
-
-  Timer? _timer; // 経過時間更新用タイマー
-  Duration _currentElapsedTime = Duration.zero; // リアルタイムの経過時間
 
   // 読み込んだ単語リストをキャッシュするためのMap
   final Map<String, List<Map<String, String>>> _loadedWordListsCache = {};
@@ -62,10 +54,6 @@ class TypingController with ChangeNotifier {
     _currentWordIndex = 0; // 出題数をリセット
     _isGameClear = false;
     _allWordsCompleted = false; // 全問完了状態をリセット
-    _gameStartTime = null; // 開始時刻をリセット
-    _finalElapsedTime = null; // 最終経過時間をリセット
-    _currentElapsedTime = Duration.zero; // リアルタイム経過時間をリセット
-    _stopTimer(); // 既存のタイマーがあれば停止
     _problemText = "読み込み中..."; // ロード中に表示するテキスト
     _problemTextToJa = "読込中...";
     textEditingController.clear(); // 前回の入力をクリア
@@ -107,16 +95,11 @@ class TypingController with ChangeNotifier {
 
     // 最初の問題を設定
     _setNewProblem();
-    _startTimer(); // 最初の問題設定後にタイマーを開始
     notifyListeners(); // UIに変更を通知
   }
 
   void _setNewProblem() {
     _currentWordIndex++; // 出題数をインクリメント
-    if (_currentWordIndex == 1 && _gameStartTime == null) {
-      // 最初の問題が出題された時（かつまだ開始時刻が記録されていなければ）
-      _gameStartTime = DateTime.now(); // ゲーム開始時刻を記録
-    }
     if (_currentWordList.isNotEmpty) {
       final wordPair =
           _currentWordList[_random.nextInt(_currentWordList.length)];
@@ -131,21 +114,6 @@ class TypingController with ChangeNotifier {
       }
     }
     // より複雑なゲームでは、最近使用した単語を避ける処理などを追加できます。
-  }
-
-  // ゲーム開始時にタイマーを開始
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_gameStartTime != null && !_isGameClear) {
-        _currentElapsedTime = DateTime.now().difference(_gameStartTime!);
-        notifyListeners(); // 経過時間更新をUIに通知
-      }
-    });
-  }
-
-  // タイマーを停止
-  void _stopTimer() {
-    _timer?.cancel();
   }
 
   // TextFieldのonChangedから呼び出されるメソッド
@@ -163,13 +131,7 @@ class TypingController with ChangeNotifier {
         if (_currentWordIndex >= _targetWordCount) {
           // 目標ワード数に達したら
           _allWordsCompleted = true;
-          _isGameClear = true; // 入力不可にするため（ゲームクリア状態も兼ねる）
-          _stopTimer(); // タイマー停止
-          if (_gameStartTime != null) {
-            _finalElapsedTime = DateTime.now().difference(
-              _gameStartTime!,
-            ); // 経過時間を計算
-          }
+          _isGameClear = true; // 入力不可にするため
           // ignore: avoid_print
           print('Practice mode: All words completed!');
         } else {
@@ -188,12 +150,6 @@ class TypingController with ChangeNotifier {
         // 「本番モード」では、1つの単語を正解したらゲームクリアとします。
         // （スコア、タイマー、連続問題など、より複雑なロジックに拡張可能です）
         _isGameClear = true;
-        _stopTimer(); // タイマー停止
-        if (_gameStartTime != null) {
-          _finalElapsedTime = DateTime.now().difference(
-            _gameStartTime!,
-          ); // 最終経過時間を計算
-        }
         // オプション：テキストフィールドをクリアしたり、メッセージを表示したりできます。
         // textEditingController.clear(); // または、TextFieldのenabledプロパティで無効化
       }
@@ -204,29 +160,13 @@ class TypingController with ChangeNotifier {
     notifyListeners(); // UIに変更を通知
   }
 
-  // リアルタイム経過時間のゲッター
-  String get currentElapsedTimeFormatted {
-    final minutes = _currentElapsedTime.inMinutes
-        .remainder(60)
-        .toString()
-        .padLeft(2, '0');
-    final seconds = _currentElapsedTime.inSeconds
-        .remainder(60)
-        .toString()
-        .padLeft(2, '0');
-    return '$minutes:$seconds';
-  }
-
   // textEditingControllerのリスナーメソッド
   void _onInput() {
     // このメソッドはTextEditingControllerのテキストが変更されるたびに呼び出されます。
     // 特定のシナリオでonChangedコールバックよりもリスナーを優先する場合にロジックをここに配置できます。
     // 現在のセットアップでは、TextFieldの`onChanged`から呼び出される`onInputChanged`がより直接的です。
     // `onInputChanged`が既にロジックを処理している場合、このリスナーは必要に応じて他のリアクティブな更新に使用できます。
-    // ただし、リアルタイムの経過時間表示のためにnotifyListeners()を頻繁に呼び出すのは、
-    // onInputChangedではなくタイマーで行う方が効率的です。
     // 重複処理を避けるため、主要なロジックは`onInputChanged`にあることを確認してください。
-    // ここでは特に何もしません。
   }
 
   @override
@@ -234,6 +174,5 @@ class TypingController with ChangeNotifier {
     textEditingController.removeListener(_onInput);
     textEditingController.dispose();
     super.dispose();
-    _stopTimer(); // コントローラー破棄時にもタイマーを停止
   }
 }

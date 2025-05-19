@@ -31,6 +31,12 @@ class _StartPageState extends State<StartPage> {
 
   String? _selectedLevelId;
   String? _selectedModeId;
+  int _selectedWordCount = 10; // 初期ワード数を10に設定
+
+  // ワード数の選択肢
+  final List<int> _wordCountOptions = [10, 50, 100];
+
+  // TODO: TypingControllerも、受け取ったレベルとモード、ワード数に応じて問題文の生成やゲームロジックを切り替える必要があります。
 
   @override
   void initState() {
@@ -184,6 +190,9 @@ class _StartPageState extends State<StartPage> {
                     onTap: () {
                       setState(() {
                         _selectedModeId = modeId;
+                        if (_selectedModeId == 'real') {
+                          _selectedWordCount = 100;
+                        }
                       });
                     },
                   );
@@ -263,6 +272,61 @@ class _StartPageState extends State<StartPage> {
                           style: const TextStyle(fontSize: 18),
                         ),
                       const SizedBox(height: 20),
+                      // ワード数選択
+                      Container(
+                        alignment: Alignment.center, // 子ウィジェットを中央に配置
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40.0,
+                        ), // 左右に少し余白
+                        child: IntrinsicWidth(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start, // Column内の要素は左寄せのまま
+                            children: [
+                              Text(
+                                'タイピングするワード数',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ..._wordCountOptions.map((count) {
+                                final bool isRealMode =
+                                    _selectedModeId ==
+                                    'real'; // レベルIDではなくモードIDで判定
+                                return ListTile(
+                                  title: Text('$count ワード'),
+                                  leading: Radio<int>(
+                                    value: count,
+                                    groupValue: _selectedWordCount,
+                                    onChanged:
+                                        isRealMode
+                                            ? null
+                                            : (int? value) {
+                                              setState(
+                                                () =>
+                                                    _selectedWordCount = value!,
+                                              );
+                                            },
+                                  ),
+                                  onTap:
+                                      isRealMode
+                                          ? null
+                                          : () => setState(
+                                            () => _selectedWordCount = count,
+                                          ),
+                                );
+                              }).toList(),
+                            ],
+                          ),
+                        ), // IntrinsicWidth
+                      ),
+                      const SizedBox(height: 20),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
@@ -294,9 +358,11 @@ class _StartPageState extends State<StartPage> {
                                     create: (_) => TypingController(),
                                     child: TypingPage(
                                       title:
-                                          '${_levelOptions.firstWhere((opt) => opt['id'] == _selectedLevelId)['name']} ${_modeOptions.firstWhere((opt) => opt['id'] == _selectedModeId)['name']}',
+                                          '${_levelOptions.firstWhere((opt) => opt['id'] == _selectedLevelId)['name']} ${_modeOptions.firstWhere((opt) => opt['id'] == _selectedModeId)['name']} ($_selectedWordCount words)',
                                       level: _selectedLevelId!,
                                       mode: _selectedModeId!,
+                                      wordCount:
+                                          _selectedWordCount, // 選択されたワード数を渡す
                                     ),
                                   ),
                             ),
@@ -315,5 +381,3 @@ class _StartPageState extends State<StartPage> {
     );
   }
 }
-
-// TODO: TypingControllerも、受け取ったレベルとモードに応じて問題文の生成やゲームロジックを切り替える必要があります。
