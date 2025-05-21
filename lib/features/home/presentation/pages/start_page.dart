@@ -98,21 +98,6 @@ class _StartPageState extends State<StartPage> {
               children: [
                 // DrawerHeaderの代わり (AppBarの下に配置されるため不要になる)
                 // Container( ... ),
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text('Settings'),
-                  onTap: () {
-                    // 将来的に設定画面への遷移などをここに書く
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('About'),
-                  onTap: () {
-                    // 将来的にAbout画面への遷移などをここに書く
-                  },
-                ),
-                const Divider(),
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16.0,

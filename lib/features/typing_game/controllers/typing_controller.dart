@@ -30,6 +30,9 @@ class TypingController with ChangeNotifier {
   Timer? _timer; // 経過時間更新用タイマー
   Duration _currentElapsedTime = Duration.zero; // リアルタイムの経過時間
 
+  Timer? _hintTimer; // 本番モードでのヒント表示用タイマー
+  int _hintCharsVisibleCount = 0; // 本番モードで表示されているヒントの文字数
+
   // 読み込んだ単語リストをキャッシュするためのMap
   final Map<String, List<Map<String, String>>> _loadedWordListsCache = {};
 
@@ -66,6 +69,8 @@ class TypingController with ChangeNotifier {
     _finalElapsedTime = null; // 最終経過時間をリセット
     _currentElapsedTime = Duration.zero; // リアルタイム経過時間をリセット
     _stopTimer(); // 既存のタイマーがあれば停止
+    _stopHintTimer(); // 既存のヒントタイマーがあれば停止
+    _hintCharsVisibleCount = 0; // ヒント表示数をリセット
     _problemText = "読み込み中..."; // ロード中に表示するテキスト
     _problemTextToJp = "読込中...";
     textEditingController.clear(); // 前回の入力をクリア
@@ -130,6 +135,11 @@ class TypingController with ChangeNotifier {
         _problemTextToJp = "このレベルの単語がありません！";
       }
     }
+    if (_currentMode == 'real') {
+      _hintCharsVisibleCount = 0; // 新しい問題になったらヒント表示をリセット
+      _stopHintTimer(); // 古いヒントタイマーを止めて
+      _startHintTimer(); // 新しいヒントタイマーを開始
+    }
     // より複雑なゲームでは、最近使用した単語を避ける処理などを追加できます。
   }
 
@@ -148,6 +158,28 @@ class TypingController with ChangeNotifier {
     _timer?.cancel();
   }
 
+  // 本番モードでヒントタイマーを開始
+  void _startHintTimer() {
+    if (_currentMode != 'real' ||
+        _problemText.isEmpty ||
+        _problemText == "読み込み中...") {
+      return;
+    }
+    // ヒント表示間隔を3秒に設定
+    _hintTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_hintCharsVisibleCount < _problemText.length) {
+        _hintCharsVisibleCount++;
+        notifyListeners();
+      } else {
+        _stopHintTimer(); // 全文字表示されたらタイマー停止
+      }
+    });
+  }
+
+  void _stopHintTimer() {
+    _hintTimer?.cancel();
+  }
+
   // TextFieldのonChangedから呼び出されるメソッド
   void onInputChanged(String value) {
     // ignore: avoid_print
@@ -157,51 +189,51 @@ class TypingController with ChangeNotifier {
     // 入力されたテキストと問題文（小文字に変換して比較）が一致した場合
     if (value.toLowerCase() == _problemText.toLowerCase()) {
       // ignore: avoid_print
-      print('Match found!'); // デバッグ用
-      if (_currentMode == 'practice') {
-        // 練習モードの場合
-        if (_currentWordIndex >= _targetWordCount) {
-          // 目標ワード数に達したら
-          _allWordsCompleted = true;
-          _isGameClear = true; // 入力不可にするため（ゲームクリア状態も兼ねる）
-          _stopTimer(); // タイマー停止
-          if (_gameStartTime != null) {
-            _finalElapsedTime = DateTime.now().difference(
-              _gameStartTime!,
-            ); // 経過時間を計算
-          }
-          // ignore: avoid_print
-          print('Practice mode: All words completed!');
-        } else {
-          // まだ目標に達していなければ次の問題へ
-          // ignore: avoid_print
-          print(
-            'Practice mode: Setting new problem. ($_currentWordIndex/$_targetWordCount)',
-          );
-          _setNewProblem();
-          textEditingController.clear();
-        }
-      } else if (_currentMode == 'real') {
-        // IDで比較するように変更
-        // ignore: avoid_print
-        print('Real mode: Game clear.'); // デバッグ用
-        // 「本番モード」では、1つの単語を正解したらゲームクリアとします。
-        // （スコア、タイマー、連続問題など、より複雑なロジックに拡張可能です）
-        _isGameClear = true;
-        _stopTimer(); // タイマー停止
+      print('Match found! Mode: $_currentMode'); // デバッグ用
+
+      // 目標ワード数に達したかどうかの判定 (練習モード・本番モード共通のクリア条件)
+      if (_currentWordIndex >= _targetWordCount) {
+        _allWordsCompleted = true;
+        _isGameClear = true; // 入力不可にするため（ゲームクリア状態も兼ねる）
+        _stopTimer(); // メインタイマー停止
+        _stopHintTimer(); // ヒントタイマーも停止
         if (_gameStartTime != null) {
           _finalElapsedTime = DateTime.now().difference(
             _gameStartTime!,
-          ); // 最終経過時間を計算
+          ); // 経過時間を計算
         }
-        // オプション：テキストフィールドをクリアしたり、メッセージを表示したりできます。
-        // textEditingController.clear(); // または、TextFieldのenabledプロパティで無効化
+        // ignore: avoid_print
+        print('All words completed! Mode: $_currentMode');
+      } else {
+        // まだ目標に達していなければ次の問題へ
+        print(
+          'Setting new problem. ($_currentWordIndex/$_targetWordCount) Mode: $_currentMode',
+        );
+        _setNewProblem(); // この中で本番モードの場合はヒントタイマーもリセット・再開される
+        textEditingController.clear();
       }
     } else {
       // ignore: avoid_print
       print('No match.'); // デバッグ用
     }
     notifyListeners(); // UIに変更を通知
+  }
+
+  // 表示用の問題文（本番モードではヒントに応じて加工）
+  String get revealedProblemText {
+    if (_currentMode != 'real' ||
+        _problemText.isEmpty ||
+        _problemText == "読み込み中...") {
+      return _problemText; // 練習モードまたはロード中はそのまま表示
+    }
+    if (_hintCharsVisibleCount == 0) {
+      // 最初はすべて隠す（例として'*'を使用）
+      return '*' * _problemText.length;
+    }
+    // 表示する部分と隠す部分を結合
+    final revealedPart = _problemText.substring(0, _hintCharsVisibleCount);
+    final hiddenPart = '*' * (_problemText.length - _hintCharsVisibleCount);
+    return revealedPart + hiddenPart;
   }
 
   // リアルタイム経過時間のゲッター
@@ -234,6 +266,7 @@ class TypingController with ChangeNotifier {
     textEditingController.removeListener(_onInput);
     textEditingController.dispose();
     super.dispose();
-    _stopTimer(); // コントローラー破棄時にもタイマーを停止
+    _stopTimer();
+    _stopHintTimer(); // コントローラー破棄時にもヒントタイマーを停止
   }
 }
