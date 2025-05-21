@@ -6,9 +6,9 @@ import 'dart:convert'; // JSONデコードに必要
 
 class TypingController with ChangeNotifier {
   String _problemText = "読み込み中..."; // 初期値を日本語に変更
-  String _problemTextToJa = "読込中...";
+  String _problemTextToJp = "読込中...";
   String get problemText => _problemText;
-  String get problemTextToJa => _problemTextToJa;
+  String get problemTextToJp => _problemTextToJp;
 
   final TextEditingController textEditingController = TextEditingController();
   bool _isGameClear = false;
@@ -67,7 +67,7 @@ class TypingController with ChangeNotifier {
     _currentElapsedTime = Duration.zero; // リアルタイム経過時間をリセット
     _stopTimer(); // 既存のタイマーがあれば停止
     _problemText = "読み込み中..."; // ロード中に表示するテキスト
-    _problemTextToJa = "読込中...";
+    _problemTextToJp = "読込中...";
     textEditingController.clear(); // 前回の入力をクリア
     notifyListeners(); // UIを更新して「読み込み中...」を表示
 
@@ -79,7 +79,7 @@ class TypingController with ChangeNotifier {
       final fileName = _levelToFileMap[level];
       if (fileName == null) {
         _problemText = "レベルに対応するファイルが見つかりません。";
-        _problemTextToJa = "レベルに対応するファイルが見つかりません。";
+        _problemTextToJp = "レベルに対応するファイルが見つかりません。";
         _currentWordList = [];
         notifyListeners();
         return;
@@ -98,7 +98,7 @@ class TypingController with ChangeNotifier {
         // ignore: avoid_print
         print("単語リストの読み込みエラー ($level): $e");
         _problemText = "単語リストの読み込みに失敗しました。";
-        _problemTextToJa = "単語リストの読み込みに失敗しました。";
+        _problemTextToJp = "単語リストの読み込みに失敗しました。";
         _currentWordList = [];
         notifyListeners();
         return;
@@ -121,13 +121,13 @@ class TypingController with ChangeNotifier {
       final wordPair =
           _currentWordList[_random.nextInt(_currentWordList.length)];
       _problemText = wordPair['en']!; // 英語の単語を問題文として設定
-      _problemTextToJa = wordPair['ja']!; // 日本語の単語を問題文として設定
+      _problemTextToJp = wordPair['ja']!; // 日本語の単語を問題文として設定
     } else {
       // initializeGameでエラーメッセージが設定されているはずなので、
       // ここでは problemText が "読み込み中..." の場合のみ更新する
       if (_problemText == "読み込み中...") {
         _problemText = "このレベルの単語がありません！";
-        _problemTextToJa = "このレベルの単語がありません！";
+        _problemTextToJp = "このレベルの単語がありません！";
       }
     }
     // より複雑なゲームでは、最近使用した単語を避ける処理などを追加できます。

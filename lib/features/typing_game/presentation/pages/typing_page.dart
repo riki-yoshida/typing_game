@@ -66,159 +66,149 @@ class _TypingPageState extends State<TypingPage> {
         // 全体にパディングを追加
         padding: const EdgeInsets.all(24.0),
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children:
-                controller.allWordsCompleted
-                    ? <Widget>[
-                      // 全問完了時の表示
-                      Icon(
-                        Icons.check_circle_outline,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 80,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        '全 ${controller.targetWordCount} ワードのタイピング完了！',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      if (controller.finalElapsedTime != null) // 最終経過時間があれば表示
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: Text(
-                            'クリアタイム: ${controller.finalElapsedTime!.inSeconds} 秒', // 秒単位で表示
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+          child: Stack(
+            // Column全体をStackでラップ
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children:
+                    controller.allWordsCompleted
+                        ? <Widget>[
+                          // 全問完了時の表示
+                          Icon(
+                            Icons.check_circle_outline,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 80,
                           ),
-                        ),
-                      const SizedBox(height: 30),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('スタート画面に戻る'),
-                      ),
-                    ]
-                    : <Widget>[
-                      // 通常のゲーム中の表示
-                      // ワード数と経過時間を横並びに表示
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // ワード数表示
+                          const SizedBox(height: 24),
                           Text(
-                            controller.currentWordIndex > 0
-                                ? '${controller.currentWordIndex - 1} / ${controller.targetWordCount} ワード'
-                                : '目標: ${controller.targetWordCount} ワード', // 最初の問題表示前は目標ワード数のみ
+                            '全 ${controller.targetWordCount} ワードのタイピング完了！',
                             style: TextStyle(
-                              fontSize: 18, // サイズ調整
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ), // ワード数表示のText終了
-                          // 経過時間表示
-                          Text(
-                            controller
-                                .currentElapsedTimeFormatted, // リアルタイム経過時間を表示
-                            style: TextStyle(
-                              fontSize: 18, // サイズ調整
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          if (controller.finalElapsedTime !=
+                              null) // 最終経過時間があれば表示
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16.0),
+                              child: Text(
+                                'クリアタイム: ${controller.finalElapsedTime!.inSeconds} 秒', // 秒単位で表示
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 30),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('スタート画面に戻る'),
+                          ),
+                        ]
+                        : <Widget>[
+                          // 通常のゲーム中の表示
+                          // 元のコンテンツはColumn内に
+                          // ワード数表示はPositionedウィジェット内に移動
+                          Container(
+                            // 日本語文字を表示しているコンテナ
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16.0,
+                              horizontal: 24.0,
+                            ), // EdgeInsets.symmetric終了
+                            child: Text(
+                              controller.problemTextToJp,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 160,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
-                        ], // Rowのchildren終了
-                      ), // Row終了
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16.0,
-                          horizontal: 24.0,
-                        ), // EdgeInsets.symmetric終了
-                        decoration: BoxDecoration(
-                          color:
-                              Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                0.1,
-                              ), // withValuesをwithOpacityに戻す (またはwithValuesを正しく使う)
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
+                          Container(
+                            // 英語文字を表示しているコンテナ
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16.0,
+                              horizontal: 24.0,
+                            ), // EdgeInsets.symmetric終了
+                            child: Text(
+                              controller.problemText,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ],
-                        ),
-                        child: Text(
-                          controller.problemText,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
+
+                          const SizedBox(height: 120),
+                          TextField(
+                            autofocus: true,
+                            onChanged: controller.onInputChanged,
+                            controller: controller.textEditingController,
+                            enabled: !controller.isGameClear,
+                            decoration: InputDecoration(
+                              hintText: 'ここに入力してください',
+                              filled: true,
+                              fillColor: Theme.of(context).colorScheme.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 16.0,
+                                horizontal: 20.0,
+                              ),
+                            ),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 22),
+                          ),
+                        ],
+              ),
+              // 経過時間を右上に表示
+              if (!controller.allWordsCompleted &&
+                  !controller.isGameClear) // ゲーム中のみ表示
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Column(
+                    // 経過時間とワード数をColumnで縦に並べる
+                    crossAxisAlignment: CrossAxisAlignment.end, // 右寄せにする
+                    children: [
+                      Text(
+                        controller.currentElapsedTimeFormatted,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16.0,
-                          horizontal: 24.0,
-                        ), // EdgeInsets.symmetric終了
-                        decoration: BoxDecoration(
-                          color:
-                              Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                0.1,
-                              ), // withValuesをwithOpacityに戻す (またはwithValuesを正しく使う)
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                      const SizedBox(height: 4), // 時間とワード数の間に少し余白
+                      Text(
+                        // 最初の問題表示前は 0/X とならないように調整
+                        controller.currentWordIndex > 0
+                            ? '${controller.currentWordIndex - 1} / ${controller.targetWordCount} ワード'
+                            : '目標: ${controller.targetWordCount} ワード',
+                        style: TextStyle(
+                          fontSize: 16, // 少し小さく
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                        child: Text(
-                          controller.problemTextToJa,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      TextField(
-                        autofocus: true,
-                        onChanged: controller.onInputChanged,
-                        controller: controller.textEditingController,
-                        enabled: !controller.isGameClear,
-                        decoration: InputDecoration(
-                          hintText: 'ここに入力してください',
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12.0),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16.0,
-                            horizontal: 20.0,
-                          ),
-                        ),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 22),
                       ),
                     ],
+                  ),
+                ),
+            ],
           ),
         ),
       ),
