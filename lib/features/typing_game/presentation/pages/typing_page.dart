@@ -114,7 +114,7 @@ class _TypingPageState extends State<TypingPage> {
         decoration: BoxDecoration(
           color:
               isCorrect
-                  ? Theme.of(context).colorScheme.surfaceVariant
+                  ? Theme.of(context).colorScheme.surfaceContainerHighest
                   : Theme.of(
                     context,
                   ).colorScheme.errorContainer.withOpacity(0.5), // 正誤に応じて背景色を変更

@@ -306,7 +306,7 @@ class _StartPageState extends State<StartPage> {
                                             () => _selectedWordCount = count,
                                           ),
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                         ), // IntrinsicWidth
