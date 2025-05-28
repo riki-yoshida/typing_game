@@ -12,7 +12,7 @@ class AppWidget extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => TypingController(),
       child: MaterialApp(
-        title: 'Typing Game',
+        title: 'タイピング英語塾',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.teal,
