@@ -20,7 +20,6 @@ class _StartPageState extends State<StartPage> {
     {'id': 'chuugakusei', 'name': '中学生'},
     {'id': 'koukousei', 'name': '高校生'},
     {'id': 'daigakusei', 'name': '大学生'},
-    {'id': 'shakaijin', 'name': '社会人'},
   ];
 
   // モードの選択肢 (IDと表示名)
@@ -60,7 +59,6 @@ class _StartPageState extends State<StartPage> {
       'chuugakusei': 'chuugakusei.json',
       'koukousei': 'koukousei.json',
       'daigakusei': 'daigakusei.json',
-      'shakaijin': 'shakaijin.json',
     };
 
     final fileName = levelToFileMap[levelId];
