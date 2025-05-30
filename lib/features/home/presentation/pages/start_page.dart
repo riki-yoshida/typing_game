@@ -236,11 +236,15 @@ class _StartPageState extends State<StartPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       const Text(
-                        'Welcome to Typing Game!',
+                        'タイピング英語塾',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      const Text(
+                        '出てくる日本語を英語に直して素早く入力しよう！',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                       const SizedBox(height: 20),
                       if (_selectedLevelId != null)
