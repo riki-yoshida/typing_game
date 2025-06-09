@@ -6,13 +6,11 @@ import 'package:typing_game/features/typing_game/controllers/typing_controller.d
 class TypingPage extends StatefulWidget {
   const TypingPage({
     super.key,
-    required this.title,
     required this.level,
     required this.mode,
     this.wordCount = 10, // wordCountパラメータを追加し、デフォルト値を設定
   });
 
-  final String title;
   final String level;
   final String mode; // modeパラメータを追加
   // levelパラメータを追加
@@ -179,7 +177,6 @@ class _TypingPageState extends State<TypingPage> {
       appBar: AppBar(
         backgroundColor:
             Theme.of(context).colorScheme.primaryContainer, // AppBarの色を変更
-        title: Text(widget.title),
       ),
       backgroundColor: Theme.of(
         context,

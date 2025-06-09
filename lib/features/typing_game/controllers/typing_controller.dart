@@ -135,7 +135,7 @@ class TypingController with ChangeNotifier {
         _problemTextToJp = "このレベルの単語がありません！";
       }
     }
-    if (_currentMode == 'real') {
+    if (_currentMode == 'attack') {
       _hintCharsVisibleCount = 0; // 新しい問題になったらヒント表示をリセット
       _stopHintTimer(); // 古いヒントタイマーを止めて
       _startHintTimer(); // 新しいヒントタイマーを開始
@@ -160,7 +160,7 @@ class TypingController with ChangeNotifier {
 
   // 本番モードでヒントタイマーを開始
   void _startHintTimer() {
-    if (_currentMode != 'real' ||
+    if (_currentMode != 'attack' ||
         _problemText.isEmpty ||
         _problemText == "読み込み中...") {
       return;
@@ -221,7 +221,7 @@ class TypingController with ChangeNotifier {
 
   // 表示用の問題文（本番モードではヒントに応じて加工）
   String get revealedProblemText {
-    if (_currentMode != 'real' ||
+    if (_currentMode != 'attack' ||
         _problemText.isEmpty ||
         _problemText == "読み込み中...") {
       return _problemText; // 練習モードまたはロード中はそのまま表示
