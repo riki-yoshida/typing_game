@@ -234,10 +234,82 @@ class _StartPageState extends State<StartPage> {
                       child: TitleWithButtons(
                         title: "Time Limit",
                         buttonActions: [
-                          ButtonAction(text: "小学生", onPressed: () {}),
-                          ButtonAction(text: "中学生", onPressed: () {}),
-                          ButtonAction(text: "高校生", onPressed: () {}),
-                          ButtonAction(text: "大学生", onPressed: () {}),
+                          ButtonAction(
+                            text: "小学生",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => ChangeNotifierProvider(
+                                        create: (_) => TypingController(),
+                                        child: TypingPage(
+                                          level: 'shougakusei',
+                                          mode: 'limit', // モードをlimitに
+                                          wordCount: 999, // 時間制限なのでワード数は大きな値
+                                        ),
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                          ButtonAction(
+                            text: "中学生",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => ChangeNotifierProvider(
+                                        create: (_) => TypingController(),
+                                        child: TypingPage(
+                                          level: 'chuugakusei',
+                                          mode: 'limit',
+                                          wordCount: 999,
+                                        ),
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                          ButtonAction(
+                            text: "高校生",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => ChangeNotifierProvider(
+                                        create: (_) => TypingController(),
+                                        child: TypingPage(
+                                          level: 'koukousei',
+                                          mode: 'limit',
+                                          wordCount: 999,
+                                        ),
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                          ButtonAction(
+                            text: "大学生",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => ChangeNotifierProvider(
+                                        create: (_) => TypingController(),
+                                        child: TypingPage(
+                                          level: 'daigakusei',
+                                          mode: 'limit',
+                                          wordCount: 999,
+                                        ),
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),

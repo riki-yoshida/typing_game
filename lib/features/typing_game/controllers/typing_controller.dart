@@ -18,6 +18,7 @@ class TypingController with ChangeNotifier {
 
   String? _currentLevel;
   String? _currentMode; // _currentModeはonInputChangedで使用されています
+  String? get currentMode => _currentMode; // currentModeのゲッターを追加
   int _targetWordCount = 10; // デフォルトの目標ワード数
   int get targetWordCount => _targetWordCount; // _targetWordCountのゲッターを追加
   int get currentWordIndex => _currentWordIndex; // _currentWordIndexのゲッターを追加
@@ -33,6 +34,12 @@ class TypingController with ChangeNotifier {
   Timer? _hintTimer; // 本番モードでのヒント表示用タイマー
   int _hintCharsVisibleCount = 0; // 本番モードで表示されているヒントの文字数
 
+  // Limitモード用
+  static const Duration _defaultTimeLimit = Duration(seconds: 60);
+  Duration _currentTimeLimit = _defaultTimeLimit;
+  Timer? _timeLimitTimer;
+  bool _isTimeUp = false;
+  int _correctAnswersInLimitMode = 0;
   // 読み込んだ単語リストをキャッシュするためのMap
   final Map<String, List<Map<String, String>>> _loadedWordListsCache = {};
 
@@ -70,6 +77,9 @@ class TypingController with ChangeNotifier {
     _currentElapsedTime = Duration.zero; // リアルタイム経過時間をリセット
     _stopTimer(); // 既存のタイマーがあれば停止
     _stopHintTimer(); // 既存のヒントタイマーがあれば停止
+    _stopTimeLimitTimer(); // 既存の制限時間タイマーがあれば停止
+    _isTimeUp = false; // 時間切れフラグをリセット
+    _correctAnswersInLimitMode = 0; // Limitモードの正解数をリセット
     _hintCharsVisibleCount = 0; // ヒント表示数をリセット
     _problemText = "読み込み中..."; // ロード中に表示するテキスト
     _problemTextToJp = "読込中...";
@@ -112,11 +122,18 @@ class TypingController with ChangeNotifier {
 
     // 最初の問題を設定
     _setNewProblem();
-    _startTimer(); // 最初の問題設定後にタイマーを開始
+    if (mode == 'limit') {
+      _currentTimeLimit = _defaultTimeLimit; // 制限時間を設定
+      _startTimeLimitTimer(); // 制限時間タイマーを開始
+    } else {
+      _startTimer(); // 通常の経過時間タイマーを開始
+    }
     notifyListeners(); // UIに変更を通知
   }
 
   void _setNewProblem() {
+    if (_isTimeUp && _currentMode == 'limit') return; // 時間切れなら新しい問題は設定しない
+
     _currentWordIndex++; // 出題数をインクリメント
     if (_currentWordIndex == 1 && _gameStartTime == null) {
       // 最初の問題が出題された時（かつまだ開始時刻が記録されていなければ）
@@ -158,6 +175,49 @@ class TypingController with ChangeNotifier {
     _timer?.cancel();
   }
 
+  void _startTimeLimitTimer() {
+    _currentElapsedTime = Duration.zero; // limitモードでも経過時間は計測する
+    _gameStartTime = DateTime.now(); // limitモードの開始時刻
+    // _currentTimeLimit は initializeGame で _defaultTimeLimit に設定済み
+
+    _timeLimitTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // _handleTimeUp でタイマーは停止されるため、このコールバック内で _isTimeUp を
+      // チェックして早期リターンすることも可能ですが、_handleTimeUp内のガードが主となります。
+
+      _currentElapsedTime += const Duration(seconds: 1);
+
+      if (_currentTimeLimit.inSeconds > 0) {
+        _currentTimeLimit -= const Duration(seconds: 1);
+      }
+      // _currentTimeLimit が 0 になっても、そのティックではまだ notifyListeners() で
+      // 残り時間 00:00 が表示される。
+
+      notifyListeners(); // 経過時間と残り時間をUIに反映
+
+      // _currentTimeLimit が0以下になったら時間切れ処理
+      // _isTimeUp チェックは _handleTimeUp の多重呼び出しを防ぐために行う
+      if (!_isTimeUp && _currentTimeLimit.inSeconds <= 0) {
+        _handleTimeUp();
+      }
+    });
+  }
+
+  void _stopTimeLimitTimer() {
+    _timeLimitTimer?.cancel();
+  }
+
+  void _handleTimeUp() {
+    if (_isTimeUp) return; // 既に処理済みなら何もしない
+
+    _isTimeUp = true;
+    _isGameClear = true; // 入力不可にする
+    _stopHintTimer();
+    _stopTimeLimitTimer(); // 自分自身を止める
+    // _finalElapsedTime は _currentElapsedTime を使うのでここでは設定不要
+    _finalElapsedTime = _currentElapsedTime;
+    notifyListeners();
+  }
+
   // 本番モードでヒントタイマーを開始
   void _startHintTimer() {
     if (_currentMode != 'attack' ||
@@ -188,29 +248,39 @@ class TypingController with ChangeNotifier {
     ); // デバッグ用
     // 入力されたテキストと問題文（小文字に変換して比較）が一致した場合
     if (value.toLowerCase() == _problemText.toLowerCase()) {
+      if (_isTimeUp && _currentMode == 'limit') return; // 時間切れなら処理しない
+
       // ignore: avoid_print
       print('Match found! Mode: $_currentMode'); // デバッグ用
 
-      // 目標ワード数に達したかどうかの判定 (練習モード・本番モード共通のクリア条件)
-      if (_currentWordIndex >= _targetWordCount) {
-        _allWordsCompleted = true;
-        _isGameClear = true; // 入力不可にするため（ゲームクリア状態も兼ねる）
-        _stopTimer(); // メインタイマー停止
-        _stopHintTimer(); // ヒントタイマーも停止
-        if (_gameStartTime != null) {
-          _finalElapsedTime = DateTime.now().difference(
-            _gameStartTime!,
-          ); // 経過時間を計算
-        }
-        // ignore: avoid_print
-        print('All words completed! Mode: $_currentMode');
-      } else {
-        // まだ目標に達していなければ次の問題へ
-        print(
-          'Setting new problem. ($_currentWordIndex/$_targetWordCount) Mode: $_currentMode',
-        );
-        _setNewProblem(); // この中で本番モードの場合はヒントタイマーもリセット・再開される
+      if (_currentMode == 'limit') {
+        _correctAnswersInLimitMode++;
+        // limitモードでは時間切れまで続けるので、ここではゲームクリアにしない
+        // 次の問題へ
+        _setNewProblem();
         textEditingController.clear();
+      } else {
+        // 練習モードまたはAttackモード
+        if (_currentWordIndex >= _targetWordCount) {
+          _allWordsCompleted = true;
+          _isGameClear = true; // 入力不可にするため（ゲームクリア状態も兼ねる）
+          _stopTimer(); // メインタイマー停止
+          _stopHintTimer(); // ヒントタイマーも停止
+          if (_gameStartTime != null) {
+            _finalElapsedTime = DateTime.now().difference(
+              _gameStartTime!,
+            ); // 経過時間を計算
+          }
+          // ignore: avoid_print
+          print('All words completed! Mode: $_currentMode');
+        } else {
+          // まだ目標に達していなければ次の問題へ
+          print(
+            'Setting new problem. ($_currentWordIndex/$_targetWordCount) Mode: $_currentMode',
+          );
+          _setNewProblem(); // この中で本番モードの場合はヒントタイマーもリセット・再開される
+          textEditingController.clear();
+        }
       }
     } else {
       // ignore: avoid_print
@@ -220,6 +290,10 @@ class TypingController with ChangeNotifier {
   }
 
   // 表示用の問題文（本番モードではヒントに応じて加工）
+  bool get isTimeUp => _isTimeUp;
+  int get correctAnswersInLimitMode => _correctAnswersInLimitMode;
+
+  // 表示用の問題文（本番モードまたはLimitモードではヒントに応じて加工）
   String get revealedProblemText {
     if (_currentMode != 'attack' ||
         _problemText.isEmpty ||
@@ -238,11 +312,32 @@ class TypingController with ChangeNotifier {
 
   // リアルタイム経過時間のゲッター
   String get currentElapsedTimeFormatted {
-    final minutes = _currentElapsedTime.inMinutes
+    Duration durationToFormat = _currentElapsedTime;
+    if (_currentMode == 'limit' && _isTimeUp) {
+      // 時間切れの場合、最終経過時間は _defaultTimeLimit になるべき
+      // ただし、_finalElapsedTime が設定されていればそれを使う
+      durationToFormat = _finalElapsedTime ?? _defaultTimeLimit;
+    }
+
+    final minutes = durationToFormat.inMinutes
         .remainder(60)
         .toString()
         .padLeft(2, '0');
-    final seconds = _currentElapsedTime.inSeconds
+    final seconds = durationToFormat.inSeconds
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  // Limitモードの残り時間表示用ゲッター
+  String get remainingTimeFormatted {
+    if (_currentMode != 'limit') return '';
+    final minutes = _currentTimeLimit.inMinutes
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    final seconds = _currentTimeLimit.inSeconds
         .remainder(60)
         .toString()
         .padLeft(2, '0');
@@ -268,5 +363,6 @@ class TypingController with ChangeNotifier {
     super.dispose();
     _stopTimer();
     _stopHintTimer(); // コントローラー破棄時にもヒントタイマーを停止
+    _stopTimeLimitTimer(); // コントローラー破棄時にも制限時間タイマーを停止
   }
 }

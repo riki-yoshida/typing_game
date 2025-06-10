@@ -61,7 +61,8 @@ class _TypingPageState extends State<TypingPage> {
   // 入力マス表示を構築するウィジェット関数
   Widget buildInputDisplay(TypingController controller) {
     if (controller.isGameClear) {
-      return const SizedBox.shrink(); // ゲームクリア時は何も表示しない
+      // Limitモードで時間切れの場合も入力マスは表示しない
+      return const SizedBox.shrink();
     }
 
     // 問題が準備できていない場合はプレースホルダーを表示
@@ -191,7 +192,10 @@ class _TypingPageState extends State<TypingPage> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children:
-                    controller.allWordsCompleted
+                    (controller.allWordsCompleted &&
+                                controller.currentMode != 'limit') ||
+                            (controller.isTimeUp &&
+                                controller.currentMode == 'limit')
                         ? <Widget>[
                           // 全問完了時の表示
                           Icon(
@@ -201,7 +205,9 @@ class _TypingPageState extends State<TypingPage> {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            '全 ${controller.targetWordCount} ワードのタイピング完了！',
+                            controller.currentMode == 'limit'
+                                ? 'タイムアップ！'
+                                : '全 ${controller.targetWordCount} ワードのタイピング完了！',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -209,8 +215,21 @@ class _TypingPageState extends State<TypingPage> {
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          if (controller.finalElapsedTime !=
-                              null) // 最終経過時間があれば表示
+                          if (controller.currentMode == 'limit')
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16.0),
+                              child: Text(
+                                '正解数: ${controller.correctAnswersInLimitMode} 問',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                ),
+                              ),
+                            ),
+                          if (controller.finalElapsedTime != null &&
+                              controller.currentMode !=
+                                  'limit') // 最終経過時間があれば表示 (Limitモード以外)
                             Padding(
                               padding: const EdgeInsets.only(top: 16.0),
                               child: Text(
@@ -326,8 +345,8 @@ class _TypingPageState extends State<TypingPage> {
                         ],
               ),
               // 経過時間とワード数を右上に表示
-              if (!controller.allWordsCompleted &&
-                  !controller.isGameClear) // ゲーム中のみ表示
+              if (!controller
+                  .isGameClear) // ゲーム中のみ表示 (isGameClearは時間切れでもtrueになる)
                 Positioned(
                   top: 0,
                   right: 0,
@@ -335,20 +354,32 @@ class _TypingPageState extends State<TypingPage> {
                     // 経過時間とワード数をColumnで縦に並べる
                     crossAxisAlignment: CrossAxisAlignment.end, // 右寄せにする
                     children: [
-                      Text(
-                        controller.currentElapsedTimeFormatted,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.secondary,
+                      if (controller.currentMode == 'limit')
+                        Text(
+                          '残り時間: ${controller.remainingTimeFormatted}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                Theme.of(context).colorScheme.error, // 残り時間は赤系で
+                          ),
+                        )
+                      else // Lesson or Attack mode
+                        Text(
+                          '経過時間: ${controller.currentElapsedTimeFormatted}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4), // 時間とワード数の間に少し余白
+                      const SizedBox(height: 4),
                       Text(
-                        // 現在の出題数 / 目標ワード数 を表示
-                        controller.currentWordIndex > 0
-                            ? '${controller.currentWordIndex} / ${controller.targetWordCount} ワード'
-                            : '目標: ${controller.targetWordCount} ワード',
+                        controller.currentMode == 'limit'
+                            ? '正解数: ${controller.correctAnswersInLimitMode}'
+                            : (controller.currentWordIndex > 0
+                                ? '${controller.currentWordIndex} / ${controller.targetWordCount} ワード'
+                                : '目標: ${controller.targetWordCount} ワード'),
                         style: TextStyle(
                           fontSize: 16, // 少し小さく
                           color: Theme.of(context).colorScheme.primary,
