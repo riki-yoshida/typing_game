@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:typing_game/features/typing_game/controllers/typing_controller.dart';
-import 'package:typing_game/features/home/presentation/pages/start_page.dart';
+import 'package:typing_game/core/router.dart'; // 作成したrouter.dartをインポート
 import 'package:typing_game/theme/app_colors.dart';
 
 class AppWidget extends StatelessWidget {
@@ -10,11 +10,13 @@ class AppWidget extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    // ChangeNotifierProviderは各画面で必要に応じて提供するか、
+    // GoRouterのルートビルダー内で提供することを検討します。
+    // ここでのグローバルな提供が不要な場合は削除も可能です。
     return ChangeNotifierProvider(
       create: (context) => TypingController(),
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'タイピング英語塾',
-        // ライトテーマの設定
         theme: ThemeData(
           useMaterial3: true,
           fontFamily: 'NotoSansJP',
@@ -35,7 +37,6 @@ class AppWidget extends StatelessWidget {
             onError: AppColors.lightOnError,
             // background と onBackground は surface と onSurface でカバーされるため削除
           ),
-          // 他のテーマ属性（例：textTheme, appBarThemeなど）もここで定義できます
         ),
         // ダークテーマの設定
         darkTheme: ThemeData(
@@ -59,7 +60,7 @@ class AppWidget extends StatelessWidget {
           ),
         ),
         themeMode: ThemeMode.system, // システム設定に基づいてテーマを自動的に切り替える
-        home: const StartPage(), // MaterialAppのhomeをStartPageに変更
+        routerConfig: router, // GoRouterの設定を適用
       ),
     );
   }

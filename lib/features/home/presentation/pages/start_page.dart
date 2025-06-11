@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:typing_game/features/typing_game/presentation/pages/typing_page.dart';
-import 'package:typing_game/features/typing_game/controllers/typing_controller.dart'; // コントローラーをインポート
-import 'package:typing_game/features/word_list/presentation/pages/word_list_page.dart'; // WordListPageをインポート
+import 'package:go_router/go_router.dart'; // GoRouterをインポート
+// WordListPageをインポート
 import 'package:typing_game/features/home/presentation/widgets/title_with_buttons.dart';
-import 'package:flutter/services.dart' show rootBundle; // JSONファイル読み込みに必要
-import 'dart:convert'; // JSONデコードに必要
+// JSONファイル読み込みに必要
+// JSONデコードに必要
 
 class StartPage extends StatefulWidget {
   const StartPage({super.key});
@@ -35,6 +33,7 @@ class _StartPageState extends State<StartPage> {
       //         tooltip: 'ログイン', // アイコンにマウスオーバーした際に表示されるテキスト
       //         onPressed: () {
       //           // TODO: ログイン処理またはログイン画面への遷移を実装
+      //           // context.go('/login'); // 例: /login ルートに遷移
       //           ScaffoldMessenger.of(
       //             context,
       //           ).showSnackBar(const SnackBar(content: Text('ログインボタンが押されました')));
@@ -92,77 +91,25 @@ class _StartPageState extends State<StartPage> {
                         ButtonAction(
                           text: "小学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'shougakusei',
-                                        mode: 'lesson',
-                                        wordCount: 100,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/lesson/shougakusei');
                           },
                         ),
                         ButtonAction(
                           text: "中学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'chuugakusei',
-                                        mode: 'lesson',
-                                        wordCount: 100,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/lesson/chuugakusei');
                           },
                         ),
                         ButtonAction(
                           text: "高校生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'koukousei',
-                                        mode: 'lesson',
-                                        wordCount: 100,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/lesson/koukousei');
                           },
                         ),
                         ButtonAction(
                           text: "大学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'daigakusei',
-                                        mode: 'lesson',
-                                        wordCount: 100,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/lesson/daigakusei');
                           },
                         ),
                       ],
@@ -175,77 +122,25 @@ class _StartPageState extends State<StartPage> {
                         ButtonAction(
                           text: "小学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'shougakusei',
-                                        mode: 'attack',
-                                        wordCount: 100,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/attack/shougakusei');
                           },
                         ),
                         ButtonAction(
                           text: "中学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'chuugakusei',
-                                        mode: 'attack',
-                                        wordCount: 100,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/attack/chuugakusei');
                           },
                         ),
                         ButtonAction(
                           text: "高校生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'koukousei',
-                                        mode: 'attack',
-                                        wordCount: 100,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/attack/koukousei');
                           },
                         ),
                         ButtonAction(
                           text: "大学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'daigakusei',
-                                        mode: 'attack',
-                                        wordCount: 100,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/attack/daigakusei');
                           },
                         ),
                       ],
@@ -258,77 +153,25 @@ class _StartPageState extends State<StartPage> {
                         ButtonAction(
                           text: "小学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'shougakusei',
-                                        mode: 'limit', // モードをlimitに
-                                        wordCount: 999, // 時間制限なのでワード数は大きな値
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/limit/shougakusei');
                           },
                         ),
                         ButtonAction(
                           text: "中学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'chuugakusei',
-                                        mode: 'limit',
-                                        wordCount: 999,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/limit/chuugakusei');
                           },
                         ),
                         ButtonAction(
                           text: "高校生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'koukousei',
-                                        mode: 'limit',
-                                        wordCount: 999,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/limit/koukousei');
                           },
                         ),
                         ButtonAction(
                           text: "大学生",
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => ChangeNotifierProvider(
-                                      create: (_) => TypingController(),
-                                      child: TypingPage(
-                                        level: 'daigakusei',
-                                        mode: 'limit',
-                                        wordCount: 999,
-                                      ),
-                                    ),
-                              ),
-                            );
+                            context.go('/typing/limit/daigakusei');
                           },
                         ),
                       ],

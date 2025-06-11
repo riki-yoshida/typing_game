@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart'; // Required for LengthLimitingTextInputFormatter
 import 'package:typing_game/features/typing_game/controllers/typing_controller.dart';
 
@@ -243,7 +244,7 @@ class _TypingPageState extends State<TypingPage> {
                             ),
                           const SizedBox(height: 30),
                           ElevatedButton(
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () => context.go('/'),
                             child: const Text('スタート画面に戻る'),
                           ),
                         ]
