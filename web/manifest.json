@@ -1,11 +1,11 @@
 {
-    "name": "typing_game",
-    "short_name": "typing_game",
+    "name": "タイピング英語塾",
+    "short_name": "タイピング英語塾",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "このタイピングゲームで、楽しくタイピングスキルを磨きながら英単語も効率的に学習！初心者から上級者まで対応した豊富な単語リストを全て無料で提供。英語力とタイピング速度アップを目指しましょう。",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
