@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart'; // Required for LengthLimitingTextInputFormatter
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:typing_game/features/typing_game/controllers/typing_controller.dart';
 
 class TypingPage extends StatefulWidget {
@@ -66,11 +66,25 @@ class _TypingPageState extends State<TypingPage> {
       return const SizedBox.shrink();
     }
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    // 親のPaddingが左右に24.0ずつあると仮定
+    final double contentAreaWidth = screenWidth - (2 * 24.0);
+
+    // セルのレスポンシブな幅を計算
+    double calculatedCellWidth = (contentAreaWidth / 30).clamp(20.0, 40.0);
+    double calculatedCellHeight = (contentAreaWidth / 30).clamp(32.0, 56.0);
+    double fontSize = (contentAreaWidth / 30).clamp(16.0, 32.0);
+
+    if (controller.isGameClear) {
+      // Limitモードで時間切れの場合も入力マスは表示しない
+      return const SizedBox.shrink();
+    }
+
     // 問題が準備できていない場合はプレースホルダーを表示
     if (controller.problemText.isEmpty ||
         controller.problemText == "読み込み中...") {
       return Container(
-        height: 48, // マスの高さに合わせる
+        height: calculatedCellHeight, // マスの高さに合わせる
         alignment: Alignment.center,
         child: Text(
           controller.problemText == "読み込み中..." ? "読み込み中..." : "問題待機中...",
@@ -108,16 +122,16 @@ class _TypingPageState extends State<TypingPage> {
       }
 
       return Container(
-        width: 38, // マスの幅
-        height: 48, // マスの高さ
+        width: calculatedCellWidth, // レスポンシブなマスの幅
+        height: calculatedCellHeight, // レスポンシブなマスの高さ
         margin: const EdgeInsets.symmetric(horizontal: 3), // マス間の余白
         decoration: BoxDecoration(
           color:
               isCorrect
                   ? Theme.of(context).colorScheme.surfaceContainerHighest
-                  : Theme.of(
-                    context,
-                  ).colorScheme.errorContainer.withOpacity(0.5), // 正誤に応じて背景色を変更
+                  : Theme.of(context).colorScheme.errorContainer.withValues(
+                    alpha: 0.5,
+                  ), // 正誤に応じて背景色を変更
           border: Border.all(
             color:
                 !isCorrect
@@ -127,15 +141,15 @@ class _TypingPageState extends State<TypingPage> {
                         ? Theme.of(context)
                             .colorScheme
                             .primary // アクティブなマスの枠線色
-                        : Theme.of(context).colorScheme.outline.withOpacity(
-                          0.5,
+                        : Theme.of(context).colorScheme.outline.withValues(
+                          alpha: 0.5,
                         )), // 非アクティブなマスの枠線色
             width: isActive ? 2.0 : 1.0, // アクティブなマスの枠線太さ
           ),
           borderRadius: BorderRadius.circular(8), // 角丸
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -145,7 +159,7 @@ class _TypingPageState extends State<TypingPage> {
           child: Text(
             charToShow, // 入力された文字をそのまま表示
             style: TextStyle(
-              fontSize: 20,
+              fontSize: fontSize,
               fontWeight: FontWeight.bold,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -182,7 +196,7 @@ class _TypingPageState extends State<TypingPage> {
       ),
       backgroundColor: Theme.of(
         context,
-      ).colorScheme.surface.withOpacity(0.95), // 背景色と透明度
+      ).colorScheme.surface.withValues(alpha: 0.95), // 背景色と透明度
       body: Padding(
         // 全体にパディングを追加
         padding: const EdgeInsets.all(24.0),
@@ -252,24 +266,30 @@ class _TypingPageState extends State<TypingPage> {
                           // 通常のゲーム中の表示
                           // 元のコンテンツはColumn内に
                           // ワード数表示はPositionedウィジェット内に移動
-                          Container(
-                            // 日本語文字を表示しているコンテナ
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 4.0,
-                              horizontal: 8.0,
-                            ), // EdgeInsets.symmetric終了
-                            child: Text(
-                              controller.problemTextToJp,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 120, // 日本語のフォントサイズ
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
+                          LayoutBuilder(
+                            builder: (context, constrains) {
+                              double fontSizeToJp = (constrains.maxWidth / 15)
+                                  .clamp(28.0, 120.0);
+                              return Container(
+                                // 日本語文字を表示しているコンテナ
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4.0,
+                                  horizontal: 8.0,
+                                ),
+                                child: Text(
+                                  controller.problemTextToJp,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: fontSizeToJp, // 日本語のフォントサイズ
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                           Container(
                             // 英語文字を表示しているコンテナ
@@ -278,7 +298,7 @@ class _TypingPageState extends State<TypingPage> {
                               horizontal: 8.0,
                             ), // EdgeInsets.symmetric終了
                             child: Text(
-                              controller.revealedProblemText, // 修正：加工された問題文を表示
+                              controller.revealedProblemText,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 28, // 英語のフォントサイズ
