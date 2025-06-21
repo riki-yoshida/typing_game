@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle; // JSONファイル読み込みに必要
 import 'dart:async'; // Timerに必要
 import 'dart:convert'; // JSONデコードに必要
+import 'package:flutter_tts/flutter_tts.dart';
 
 class TypingController with ChangeNotifier {
   String _problemText = "読み込み中..."; // 初期値を日本語に変更
@@ -16,7 +17,6 @@ class TypingController with ChangeNotifier {
   bool _allWordsCompleted = false;
   bool get allWordsCompleted => _allWordsCompleted;
 
-  String? _currentLevel;
   String? _currentMode; // _currentModeはonInputChangedで使用されています
   String? get currentMode => _currentMode; // currentModeのゲッターを追加
   int _targetWordCount = 10; // デフォルトの目標ワード数
@@ -54,6 +54,7 @@ class TypingController with ChangeNotifier {
 
   List<Map<String, String>> _currentWordList = [];
   final Random _random = Random();
+  final FlutterTts _flutterTts = FlutterTts();
 
   TypingController() {
     // テキスト入力の変更を監視するリスナー
@@ -66,7 +67,7 @@ class TypingController with ChangeNotifier {
     required String mode,
     int wordCount = 10, // StartPageからワード数を受け取る
   }) async {
-    _currentLevel = level;
+    await _initTts();
     _currentMode = mode;
     _targetWordCount = wordCount; // 目標ワード数を設定
     _currentWordIndex = 0; // 出題数をリセット
@@ -160,6 +161,19 @@ class TypingController with ChangeNotifier {
     // より複雑なゲームでは、最近使用した単語を避ける処理などを追加できます。
   }
 
+  // TTSの初期設定
+  Future<void> _initTts() async {
+    // 英語（アメリカ）に設定
+    await _flutterTts.setLanguage("en-US");
+    // 読み上げ速度を少し遅めに設定 (0.0 ~ 1.0)
+    await _flutterTts.setSpeechRate(1.0);
+  }
+
+  // テキストを読み上げるメソッド
+  Future<void> _speak(String text) async {
+    await _flutterTts.speak(text);
+  }
+
   // ゲーム開始時にタイマーを開始
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -211,6 +225,7 @@ class TypingController with ChangeNotifier {
 
     _isTimeUp = true;
     _isGameClear = true; // 入力不可にする
+    _flutterTts.stop(); // 読み上げを停止
     _stopHintTimer();
     _stopTimeLimitTimer(); // 自分自身を止める
     // _finalElapsedTime は _currentElapsedTime を使うのでここでは設定不要
@@ -249,6 +264,8 @@ class TypingController with ChangeNotifier {
     // 入力されたテキストと問題文（小文字に変換して比較）が一致した場合
     if (value.toLowerCase() == _problemText.toLowerCase()) {
       if (_isTimeUp && _currentMode == 'limit') return; // 時間切れなら処理しない
+
+      _speak(_problemText);
 
       // ignore: avoid_print
       print('Match found! Mode: $_currentMode'); // デバッグ用
@@ -360,6 +377,7 @@ class TypingController with ChangeNotifier {
   void dispose() {
     textEditingController.removeListener(_onInput);
     textEditingController.dispose();
+    _flutterTts.stop(); // 読み上げを停止
     super.dispose();
     _stopTimer();
     _stopHintTimer(); // コントローラー破棄時にもヒントタイマーを停止
