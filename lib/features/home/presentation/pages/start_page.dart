@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // GoRouterをインポート
 // WordListPageをインポート
 import 'package:typing_game/features/home/presentation/widgets/title_with_buttons.dart';
-// JSONファイル読み込みに必要
-// JSONデコードに必要
+import 'package:flutter_tts/flutter_tts.dart';
 
 class StartPage extends StatefulWidget {
   const StartPage({super.key});
@@ -15,9 +14,24 @@ class StartPage extends StatefulWidget {
 const double kMobileBreakpoint = 600.0; // スマートフォンレイアウトのブレークポイント
 
 class _StartPageState extends State<StartPage> {
+  final FlutterTts _flutterTts = FlutterTts();
+
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initTts();
+    });
+  }
+
+  // TTSの初期設定
+  // TTSを使うのはtyping_pageだが、事前に初期化しないと設定が反映されないことがあるため、ここで設定する
+  Future<void> _initTts() async {
+    // 英語（アメリカ）に設定
+    await _flutterTts.setLanguage("en-US");
+    // 読み上げ速度を少し遅めに設定 (0.0 ~ 1.0)
+    await _flutterTts.setSpeechRate(1.0);
   }
 
   @override
